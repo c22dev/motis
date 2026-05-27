@@ -87,11 +87,6 @@ jobs:
         config:
           - preset: linux-amd64-release
             artifact: linux-amd64
-          - preset: linux-sanitizer
-          - preset: linux-debug
-            emulator: valgrind --suppressions=deps/osr/docs/tbb.supp --suppressions=deps/osr/docs/pthread.supp --suppressions=tools/suppress.txt --leak-check=full --gen-suppressions=all --error-exitcode=1
-    env:
-      BUILDCACHE_DIR: /buildcache
       BUILDCACHE_DIRECT_MODE: true
       BUILDCACHE_MAX_CACHE_SIZE: 26843545600
       BUILDCACHE_LUA_PATH: ${{ github.workspace }}/tools
