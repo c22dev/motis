@@ -31,8 +31,6 @@ using namespace std::chrono_literals;
 using namespace test;
 namespace n = nigiri;
 
-namespace {
-
 // The trip-qualified transfers.txt row differs from the unqualified one of the
 // stop pair, so trip A stops at a virtual location below S1 (and B below S2).
 constexpr auto const kGTFS = R"(
@@ -83,8 +81,6 @@ void expect_stop_ids(api::Itinerary const& it) {
     }
   }
 }
-
-}  // namespace
 
 TEST(motis, transfer_rule_stop_ids) {
   auto const dir = std::filesystem::path{"test/data/transfer_rule_stop_ids"};

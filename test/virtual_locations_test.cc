@@ -30,8 +30,6 @@ using namespace motis;
 using namespace date;
 namespace n = nigiri;
 
-namespace {
-
 // FA (RF1) is split off to a virtual location below U by the RF1 -> RF3 rule;
 // FB and FB2 (RF2) leave from U itself. The RB trips at Z are split off by
 // the rule qualified on its from side only (arriving on RB); the RB2 trips
@@ -227,8 +225,6 @@ api::Itinerary plan_l_to_m(data& d, std::string const& extra = "") {
   EXPECT_FALSE(res.itineraries_.empty());
   return res.itineraries_.empty() ? api::Itinerary{} : res.itineraries_.front();
 }
-
-}  // namespace
 
 // ===========================================================================
 // Location loops: a virtual location is its stop outside of the routing.

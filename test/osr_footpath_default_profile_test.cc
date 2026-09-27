@@ -16,8 +16,6 @@
 using namespace motis;
 namespace n = nigiri;
 
-namespace {
-
 // All stops lie far outside of the OSM extract, so the street router connects
 // none of them: what the default profile holds for a pair is a rule or an
 // estimate.
@@ -97,8 +95,6 @@ std::optional<int> minutes(n::timetable const& tt,
   return best;
 }
 
-}  // namespace
-
 // Without osr_footpath, the default profile keeps the loader's footpath layer.
 TEST(motis, default_profile_walks_without_osr_footpath) {
   auto const d = import_with(false, "default_profile_beeline");
@@ -126,8 +122,6 @@ TEST(motis, default_profile_walks_with_osr_footpath) {
   EXPECT_EQ(std::nullopt, minutes(tt, n::kFootProfile, "P1", "Q"));
   EXPECT_EQ(std::nullopt, minutes(tt, n::kFootProfile, "P2", "R"));
 }
-
-namespace {
 
 // RE2 arrives at FFM_10 10:25, S3a leaves FFM_101 10:30, S3b 10:40. The beeline
 // walk between the two stops takes 3 min, the routed walk 6 min.
@@ -169,8 +163,6 @@ S3b,10:48:00,10:48:00,FFM_HAUPT_S,1,0,0
 service_id,date,exception_type
 S1,20190501,1
 )";
-
-}  // namespace
 
 // The trip-based transfers are precomputed at import time: with osr_footpath
 // they have to come from the timetable the server routes on (tt_ext.bin), or
