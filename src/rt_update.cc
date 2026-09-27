@@ -182,10 +182,6 @@ void apply_canned(data& d, endpoints_t const& endpoints, n::rt_timetable& rtt) {
   }
 }
 
-// The day a canned dump was written: the most common day among the GTFS-RT
-// feed header timestamps. Real-time event times are relative to the base day
-// and clamped: a dump replayed later on a wall clock base day would lose its
-// updates.
 date::sys_days get_canned_day(endpoints_t const& endpoints) {
   auto days = std::map<date::sys_days, unsigned>{};
   for (auto const& ep : endpoints) {

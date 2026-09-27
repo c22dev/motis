@@ -92,7 +92,7 @@ int generate(int ac, char** av) {
   auto time_of_day = std::optional<std::uint32_t>{};
   auto modes = std::optional<std::vector<api::ModeEnum>>{};
   auto max_dist = 800.0;  // m
-  auto max_direct = 0U;  // minutes, 0 = disabled
+  auto max_direct = 0U;
   auto use_walk = false;
   auto use_bike = false;
   auto use_car = false;
@@ -339,8 +339,6 @@ int generate(int ac, char** av) {
     for (auto i = 0U; i != d.tt_->n_locations(); ++i) {
       auto const l = n::location_idx_t{i};
       if (n::is_special(l)) {
-        // Special stations belong to no dataset and are unreachable: a rank
-        // near the end of the lower bound order would pick them.
         continue;
       }
       if (src_filter && utl::find(*src_filter, d.tt_->locations_.src_[l]) ==
@@ -354,7 +352,6 @@ int generate(int ac, char** av) {
         continue;
       }
       if (d.tt_->locations_.is_virt(l)) {
-        // A virtual location has no id of its own: queries use its stop.
         continue;
       }
       v.emplace_back(l);
@@ -459,10 +456,6 @@ int generate(int ac, char** av) {
       return fmt::format("{},{}", pos.lat(), pos.lng());
     };
 
-    // A short direct walk dominates every transit journey, so which transit
-    // journey is returned depends on the access/egress the router picks among
-    // equally optimal ones: such queries do not compare between routing
-    // backends. nigiri's query generator discards them as well (kMaxDirect).
     auto const has_short_direct = [&](geo::latlng const& from,
                                       geo::latlng const& to) {
       if (max_direct == 0U || d.w_ == nullptr || d.l_ == nullptr) {
@@ -535,7 +528,7 @@ int generate(int ac, char** av) {
       }
 
       if (!from_place.has_value() || !to_place.has_value()) {
-        return false;  // every pair drawn was rejected
+        return false;
       }
       s.p_.fromPlace_ = *from_place;
       s.p_.toPlace_ = *to_place;

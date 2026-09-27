@@ -6,8 +6,6 @@
 
 namespace motis {
 
-// The routes stopping at `l`, including those at its virtual locations:
-// transfers.txt rules move trips there, but they still stop at `l`.
 template <typename Fn>
 void for_each_route_at(nigiri::timetable const& tt,
                        nigiri::location_idx_t const l,
@@ -22,8 +20,6 @@ void for_each_route_at(nigiri::timetable const& tt,
   });
 }
 
-// Whether `pred` holds for one of the routes stopping at `l` (see
-// for_each_route_at). No route is checked after the first match.
 template <typename Pred>
 bool any_route_at(nigiri::timetable const& tt,
                   nigiri::location_idx_t const l,

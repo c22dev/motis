@@ -160,8 +160,6 @@ api::Reachable one_to_all::operator()(boost::urls::url_view const& url) const {
   all.reserve(reachable.count());
   auto const all_ev =
       query.arriveBy_ ? n::event_type::kDep : n::event_type::kArr;
-  // Outside of the routing, a virtual location is its stop: the stop is
-  // reached as soon as it or one of its virtual locations is.
   auto fastest = std::map<n::location_idx_t, n::routing::fastest_offset>{};
   reachable.for_each_set_bit([&](auto const i) {
     auto const l = n::location_idx_t{i};

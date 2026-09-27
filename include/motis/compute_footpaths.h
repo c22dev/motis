@@ -23,10 +23,6 @@ struct routed_transfers_settings {
   std::chrono::seconds max_duration_;
   std::function<bool(nigiri::location_idx_t)> is_candidate_{};
 
-  // Also replace the beeline walks of the default profile with this profile's
-  // routed ones; transfers.txt stays authoritative. A pair the router cannot
-  // connect keeps a beeline estimate if it is closer than 100m or within one
-  // station: OSM often lacks a station's passages.
   bool rebuild_default_profile_{false};
 };
 

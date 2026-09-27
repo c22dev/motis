@@ -12,8 +12,6 @@ inline point_rtree<nigiri::location_idx_t> create_location_rtree(
   auto t = point_rtree<nigiri::location_idx_t>{};
   for (auto i = nigiri::location_idx_t{nigiri::kNSpecialStations};
        i != tt.n_locations(); ++i) {
-    // Outside of the routing, a virtual location is its stop: same
-    // position, no id of its own.
     if (!tt.locations_.is_virt(i)) {
       t.add(tt.locations_.coordinates_[i], i);
     }

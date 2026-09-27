@@ -136,8 +136,6 @@ api::Place to_place(n::timetable const* tt,
               }
               l = std::get<tt_location>(dest).l_;
             }
-            // A virtual location is output as its stop, with the stop's
-            // attributes.
             l = tt->locations_.get_base_idx(l);
             auto const actual = tt->locations_.get_base_idx(tt_l.l_);
             auto const scheduled = tt->locations_.get_base_idx(tt_l.scheduled_);

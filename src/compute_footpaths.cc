@@ -31,8 +31,6 @@ namespace n = nigiri;
 
 namespace motis {
 
-// Below this distance, a pair the router cannot connect is taken as an OSM data
-// error, not a real gap.
 constexpr auto const kMaxMissingFootpathDistance = 100.0;
 
 elevator_footpath_map_t compute_footpaths(
@@ -85,15 +83,11 @@ elevator_footpath_map_t compute_footpaths(
       fps.clear();
     }
 
-    // Beeline estimates the default profile gets in addition to `transfers`.
     auto default_estimates =
         n::vector_map<n::location_idx_t, std::vector<n::footpath>>(
             mode.rebuild_default_profile_ ? tt.n_locations() : 0U);
 
     auto const is_candidate = [&](n::location_idx_t const l) {
-      // A virtual location sits where its stop sits and the profiles computed
-      // here do not distinguish the two: routing it would only repeat the
-      // stop's work.
       if (tt.locations_.is_virt(l)) {
         return false;
       }
@@ -202,15 +196,7 @@ elevator_footpath_map_t compute_footpaths(
             }
           }
 
-          // transfers.txt applies to the default profile only: the durations
-          // computed here are physical (a wheelchair may not manage the
-          // stated time or the stairs at all). Virtual locations get no
-          // footpaths here, the routing projects them onto their stop.
 
-          // A pair the router cannot connect gets a beeline estimate where
-          // this is likely an OSM data error rather than a real gap: closer
-          // than kMaxMissingFootpathDistance and, for the default profile,
-          // also within one station.
           if (mode.extend_missing_ || mode.rebuild_default_profile_) {
             for (auto const [n, r] : utl::zip(s.neighbors_, results)) {
               if (r.has_value()) {

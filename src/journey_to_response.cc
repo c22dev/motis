@@ -172,8 +172,6 @@ std::optional<api::TicketUrls> get_ticketing_urls(
     return std::nullopt;
   }
 
-  // Ticketing data is stated per stop: a virtual location (transfers.txt
-  // rules) takes its stop's.
   auto const stop_of = [&](n::rt::run_stop const& s) {
     return tt.locations_.get_base_idx(s.get_stop().location_idx());
   };

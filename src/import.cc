@@ -509,8 +509,6 @@ void import(config const& c,
              .max_matching_distance_ = c.timetable_->max_matching_distance_,
              .extend_missing_ = c.timetable_->extend_missing_footpaths_,
              .max_duration_ = c.timetable_->max_footpath_length_ * 1min,
-             // Without osr_footpath this task does not run and the default
-             // profile keeps the loader's footpath layer.
              .rebuild_default_profile_ = true},
             {.profile_ = osr::search_profile::kWheelchair,
              .profile_idx_ = n::kWheelchairProfile,
@@ -520,8 +518,6 @@ void import(config const& c,
              .profile_idx_ = n::kCarProfile,
              .max_matching_distance_ = 250.0,
              .max_duration_ = 8h,
-             // The profile projects virtual locations onto their stop, so
-             // the routes at them count for the stop.
              .is_candidate_ = [&](n::location_idx_t const l) {
                return any_route_at(*d.tt_, l, [&](n::route_idx_t const r) {
                  return d.tt_->is_flag_set(nigiri::kCarsAllowed, r);
@@ -545,8 +541,6 @@ void import(config const& c,
                  cista::build_hash(c.timetable_.value_or(config::timetable{})
                                        .preprocess_max_matching_distance_)}}};
 
-  // osr_footpath replaces the walks of the default profile in tt_ext.bin: the
-  // trip-based transfers have to be precomputed on that timetable.
   auto tbd_hashes = meta_t{tt_hash, n_version(), tbd_version()};
   if (c.osr_footpath_) {
     tbd_hashes.insert(begin(osr_footpath.hashes_), end(osr_footpath.hashes_));

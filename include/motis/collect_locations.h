@@ -30,8 +30,6 @@ inline void add_location(nigiri::timetable const& tt,
                          nigiri::location_idx_t const l,
                          bool const exact = false) {
   if (exact) {
-    // The stop itself, including the virtual locations some of its trips
-    // stop at.
     locations.emplace_back(l);
     tt.locations_.for_each_virt(
         l, [&](nigiri::location_idx_t const v) { locations.emplace_back(v); });
