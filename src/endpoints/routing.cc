@@ -1144,8 +1144,6 @@ api::plan_response routing::route(api::plan_params const& query,
 #if defined(NIGIRI_CUDA)
     auto gpu_used = false;
     auto const gpu_supported = n::routing::gpu::gpu_supported(q, rtt);
-    // Taken once per query, before the search allocates anything.
-    auto const gpu_mem_before = n::routing::gpu::device_mem_info();
     auto const run_on_gpu = [&](bool const use_pong) -> bool {
       try {
         auto const lease = gpu_pool_->acquire();
@@ -1225,8 +1223,6 @@ api::plan_response routing::route(api::plan_params const& query,
 #if defined(NIGIRI_CUDA)
         {"gpu_used", gpu_used},
         {"gpu_supported", gpu_supported},
-        {"gpu_mem_used_mb", gpu_mem_before.used_ / (1024U * 1024U)},
-        {"gpu_mem_total_mb", gpu_mem_before.total_ / (1024U * 1024U)},
 #endif
     };
 
