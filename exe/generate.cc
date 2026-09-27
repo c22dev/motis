@@ -184,11 +184,8 @@ int generate(int ac, char** av) {
        "maximum distance from a public transit stop in meters, only used for "
        "intermodal queries")  //
       ("max_direct", po::value(&max_direct)->default_value(max_direct),
-       "discard queries that have a direct (walking) connection within this "
-       "many minutes; 0 = keep all. Mirrors nigiri's query generator, which "
-       "rejects queries with a direct connection under 45 minutes: for those "
-       "the direct alternative dominates and the transit result depends on "
-       "which equally-optimal access/egress the router happens to pick")  //
+       "discard queries with a direct (walking) connection within this many "
+       "minutes, 0 = keep all")  //
       ("max_travel_time",
        po::value<std::int64_t>()->notifier(
            [&](auto const v) { master_params.maxTravelTime_ = v; }),
@@ -342,8 +339,9 @@ int generate(int ac, char** av) {
     for (auto i = 0U; i != d.tt_->n_locations(); ++i) {
       auto const l = n::location_idx_t{i};
       if (n::is_special(l)) {
-        continue;  // START, END, VIA0-6: no dataset, unreachable - a rank
-                   // near the end of the lower bound order would pick them
+        // Special stations belong to no dataset and are unreachable: a rank
+        // near the end of the lower bound order would pick them.
+        continue;
       }
       if (src_filter && utl::find(*src_filter, d.tt_->locations_.src_[l]) ==
                             end(*src_filter)) {
@@ -355,10 +353,9 @@ int generate(int ac, char** av) {
            !d.odm_bounds_->contains(d.tt_->locations_.coordinates_[l]))) {
         continue;
       }
-      if (d.tt_->locations_.types_[l] == n::location_type::kVirt) {
-        continue;  // no id of its own: a query naming one cannot be resolved,
-                   // and its trips are reachable through the stop it was
-                   // split off
+      if (d.tt_->locations_.is_virt(l)) {
+        // A virtual location has no id of its own: queries use its stop.
+        continue;
       }
       v.emplace_back(l);
     }
@@ -462,11 +459,10 @@ int generate(int ac, char** av) {
       return fmt::format("{},{}", pos.lat(), pos.lng());
     };
 
-    // A direct walk that is short enough dominates every transit journey, and
-    // which transit journey survives then depends on the access/egress the
-    // router picked among equally optimal ones - so those queries are not
-    // reproducible between routing backends. nigiri's own query generator
-    // discards them (kMaxDirect); this mirrors it, opt-in.
+    // A short direct walk dominates every transit journey, so which transit
+    // journey is returned depends on the access/egress the router picks among
+    // equally optimal ones: such queries do not compare between routing
+    // backends. nigiri's query generator discards them as well (kMaxDirect).
     auto const has_short_direct = [&](geo::latlng const& from,
                                       geo::latlng const& to) {
       if (max_direct == 0U || d.w_ == nullptr || d.l_ == nullptr) {
@@ -494,6 +490,7 @@ int generate(int ac, char** av) {
         auto rank_stop = n::location_idx_t::invalid();
         if (use_flex) {
           auto const seed = rand_in(flex_seeds);
+          from_pos = seed.from_;
           from_place = fmt::format("{},{}", seed.from_.lat_, seed.from_.lng_);
           rank_stop = seed.rank_stop_;
         } else {

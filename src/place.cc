@@ -136,27 +136,27 @@ api::Place to_place(n::timetable const* tt,
               }
               l = std::get<tt_location>(dest).l_;
             }
-            // a virtual location (transfers.txt rules) is its stop
-            l = tt->locations_.get_attribute_idx(l);
+            // A virtual location is output as its stop, with the stop's
+            // attributes.
+            l = tt->locations_.get_base_idx(l);
+            auto const actual = tt->locations_.get_base_idx(tt_l.l_);
+            auto const scheduled = tt->locations_.get_base_idx(tt_l.scheduled_);
             auto const get_track = [&](n::location_idx_t const x) {
               auto const p =
-                  tt->translate(lang, tt->locations_.platform_codes_.at(
-                                          tt->locations_.get_attribute_idx(x)));
+                  tt->translate(lang, tt->locations_.platform_codes_.at(x));
               return p.empty() ? std::nullopt : std::optional{std::string{p}};
             };
 
             auto const get_stop_code = [&](n::location_idx_t const x) {
               auto const p =
-                  tt->translate(lang, tt->locations_.stop_codes_.at(
-                                          tt->locations_.get_attribute_idx(x)));
+                  tt->translate(lang, tt->locations_.stop_codes_.at(x));
               return p.empty() ? std::nullopt : std::optional{std::string{p}};
             };
 
             // check if description is available, if not, return nullopt
             auto const get_description = [&](n::location_idx_t const x) {
               auto const p =
-                  tt->translate(lang, tt->locations_.descriptions_.at(
-                                          tt->locations_.get_attribute_idx(x)));
+                  tt->translate(lang, tt->locations_.descriptions_.at(x));
               return p.empty() ? std::nullopt : std::optional{std::string{p}};
             };
 
@@ -180,10 +180,10 @@ api::Place to_place(n::timetable const* tt,
                 .level_ = get_level(w, pl, matches, l),
                 .tz_ = timezone == nullptr ? fallback_tz
                                            : std::optional{timezone->name()},
-                .scheduledTrack_ = get_track(tt_l.scheduled_),
-                .track_ = get_track(tt_l.l_),
-                .stopCode_ = get_stop_code(tt_l.scheduled_),
-                .description_ = get_description(tt_l.scheduled_),
+                .scheduledTrack_ = get_track(scheduled),
+                .track_ = get_track(actual),
+                .stopCode_ = get_stop_code(scheduled),
+                .description_ = get_description(scheduled),
                 .vertexType_ = api::VertexTypeEnum::TRANSIT,
                 .modes_ =
                     ae != nullptr

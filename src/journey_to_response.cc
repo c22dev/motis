@@ -172,10 +172,10 @@ std::optional<api::TicketUrls> get_ticketing_urls(
     return std::nullopt;
   }
 
-  // ticketing data is stated per stop: a virtual location (transfers.txt
-  // rules) is its stop
+  // Ticketing data is stated per stop: a virtual location (transfers.txt
+  // rules) takes its stop's.
   auto const stop_of = [&](n::rt::run_stop const& s) {
-    return tt.locations_.get_attribute_idx(s.get_stop().location_idx());
+    return tt.locations_.get_base_idx(s.get_stop().location_idx());
   };
 
   if (tt.locations_.ticketing_unavailable_.test(stop_of(enter_stop)) ||
@@ -186,16 +186,12 @@ std::optional<api::TicketUrls> get_ticketing_urls(
   auto const provider_idx = enter_stop.get_provider_idx(n::event_type::kDep);
   auto const route_id_idx = enter_stop.get_route_id_idx(n::event_type::kDep);
 
-  // HRD trips carry neither a route id nor, through it, a provider, so both
-  // indices can be invalid here - they must not be used as subscripts.
   auto ticketing_idx = n::ticketing_link_idx_t::invalid();
   auto const route_ticket_link =
-      route_id_idx == n::route_id_idx_t::invalid()
-          ? n::ticketing_link_idx_t::invalid()
-          : tt.route_ids_[src].route_id_ticketing_link_[route_id_idx];
+      tt.route_ids_[src].route_id_ticketing_link_[route_id_idx];
   if (route_ticket_link != n::ticketing_link_idx_t::invalid()) {
     ticketing_idx = route_ticket_link;
-  } else if (provider_idx != n::provider_idx_t::invalid()) {
+  } else {
     auto provider = tt.providers_[provider_idx];
     if (provider.ticketing_link_ != n::ticketing_link_idx_t::invalid()) {
       ticketing_idx = provider.ticketing_link_;
@@ -560,7 +556,7 @@ api::Itinerary journey_to_response(
         p.name_ = tt.translate(
             lang,
             tt.locations_
-                .names_[tt.locations_.get_attribute_idx(s.get_location_idx())]);
+                .names_[tt.locations_.get_base_idx(s.get_location_idx())]);
       }
       return p;
     };

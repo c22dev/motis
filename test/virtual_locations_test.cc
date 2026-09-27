@@ -23,9 +23,8 @@
 #include "motis/import.h"
 #include "motis/itinerary_id.h"
 
-// Regression tests for motis-side defects found in the t2t-rt review
-// (virtual locations created by transfers.txt rules). Every test states the
-// correct behaviour, so it fails while the defect is present.
+// Endpoints on timetables with virtual locations (created by transfers.txt
+// rules): outside of the routing, a virtual location is its stop.
 
 using namespace motis;
 using namespace date;
@@ -35,7 +34,8 @@ namespace {
 
 // FA (RF1) is split off to a virtual location below U by the RF1 -> RF3 rule;
 // FB and FB2 (RF2) leave from U itself. The RB trips at Z are split off by
-// the one-sided "arriving on RB" rule; the RB2 trips stay at Z.
+// the rule qualified on its from side only (arriving on RB); the RB2 trips
+// stay at Z.
 constexpr auto const kPlainGTFS = R"(
 # agency.txt
 agency_id,agency_name,agency_url,agency_timezone
@@ -97,9 +97,7 @@ S1,20190501,1
 )";
 
 // With OSM and osr_footpath:
-//  - V: the RV2 departures are split off by a 10 min rule, so V has a stored
-//    rule footpath to their virtual location (outside the OSM extract).
-//  - P1, P2: two platforms of station P at the same coordinate, outside the
+//  - P1, P2: two stops of station P at the same coordinate, outside the
 //    OSM extract, so the router finds no walk and the default profile gets a
 //    beeline estimate.
 //  - CA, CA2, CB: stations inside the extract that the car profile connects
@@ -113,9 +111,6 @@ DB,Deutsche Bahn,https://deutschebahn.com,Europe/Berlin
 
 # stops.txt
 stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
-V,V,60.0,30.0,0,
-VA,VA,60.1,30.0,0,
-VB,VB,60.2,30.0,0,
 P,P,61.0,31.0,1,
 P1,P 1,61.0,31.0,0,P
 P2,P 2,61.0,31.0,0,P
@@ -128,8 +123,6 @@ CY,CY,49.5,8.4,0,
 
 # routes.txt
 route_id,agency_id,route_short_name,route_long_name,route_type
-RV1,DB,RV1,,3
-RV2,DB,RV2,,3
 RP1,DB,RP1,,3
 RP2,DB,RP2,,3
 RC1,DB,RC1,,3
@@ -139,8 +132,6 @@ RC3,DB,RC3,,3
 
 # trips.txt
 route_id,service_id,trip_id,cars_allowed
-RV1,S1,VT1,0
-RV2,S1,VT2,0
 RP1,S1,PT1,0
 RP2,S1,PT2,0
 RC1,S1,CT1,1
@@ -150,10 +141,6 @@ RC3,S1,CT3,1
 
 # stop_times.txt
 trip_id,arrival_time,departure_time,stop_id,stop_sequence
-VT1,10:00:00,10:00:00,VA,0
-VT1,10:30:00,10:30:00,V,1
-VT2,10:45:00,10:45:00,V,0
-VT2,11:00:00,11:00:00,VB,1
 PT1,10:00:00,10:00:00,PA,0
 PT1,10:30:00,10:30:00,P1,1
 PT2,10:40:00,10:40:00,P2,0
@@ -169,8 +156,6 @@ CT3,10:30:00,10:30:00,CA2,1
 
 # transfers.txt
 from_stop_id,to_stop_id,transfer_type,min_transfer_time,from_route_id,to_route_id,from_trip_id,to_trip_id
-V,V,2,120,,,,
-V,V,2,600,,RV2,,
 CA,CA,2,120,,,,
 CA,CA,2,300,,,CT1,CT9
 
@@ -199,7 +184,7 @@ data& plain() {
                        .first_day_ = "2019-05-01",
                        .num_days_ = 2,
                        .datasets_ = {{"test", {.path_ = kPlainGTFS}}}}}};
-  static auto& d = load(f, "test/data/review_t2t_plain");
+  static auto& d = load(f, "test/data/virtual_locations_plain");
   return d;
 }
 
@@ -213,7 +198,7 @@ data& with_osm() {
                                 .datasets_ = {{"test", {.path_ = kOsmGTFS}}}},
           .street_routing_ = true,
           .osr_footpath_ = true}};
-  static auto& d = load(f, "test/data/review_t2t_osm");
+  static auto& d = load(f, "test/data/virtual_locations_osm");
   return d;
 }
 
@@ -249,7 +234,7 @@ api::Itinerary plan_l_to_m(data& d, std::string const& extra = "") {
 // Location loops: a virtual location is its stop outside of the routing.
 // ===========================================================================
 
-TEST(t2t_review, one_to_all_lists_each_stop_once) {
+TEST(virtual_locations, one_to_all_lists_each_stop_once) {
   auto& d = plain();
   auto const one_to_all = utl::init_from<ep::one_to_all>(d).value();
   auto const res = one_to_all(
@@ -266,7 +251,7 @@ TEST(t2t_review, one_to_all_lists_each_stop_once) {
   }
 }
 
-TEST(t2t_review, map_stops_lists_each_stop_once) {
+TEST(virtual_locations, map_stops_lists_each_stop_once) {
   auto& d = plain();
   auto const stops = utl::init_from<ep::stops>(d).value();
   auto const res = stops("/api/v1/map/stops?min=54.9%2C12.9&max=55.3%2C13.1");
@@ -278,7 +263,7 @@ TEST(t2t_review, map_stops_lists_each_stop_once) {
   }
 }
 
-TEST(t2t_review, map_routes_lists_each_stop_once) {
+TEST(virtual_locations, map_routes_lists_each_stop_once) {
   auto& d = plain();
   auto const routes = utl::init_from<ep::routes>(d).value();
   auto const res = routes(
@@ -294,7 +279,7 @@ TEST(t2t_review, map_routes_lists_each_stop_once) {
 
 // exactRadius: the stop itself, but that includes the trips a rule moved to
 // its virtual locations (TB2, TB3) - not only the ones left at Z (TB5, TB6).
-TEST(t2t_review, stop_times_exact_radius_lists_moved_departures) {
+TEST(virtual_locations, stop_times_exact_radius_lists_moved_departures) {
   auto& d = plain();
   auto const stop_times = utl::init_from<ep::stop_times>(d).value();
   auto const res = stop_times(
@@ -307,7 +292,7 @@ TEST(t2t_review, stop_times_exact_radius_lists_moved_departures) {
 // Transfers that exist only through a hub: FA's virtual location -> U.
 // ===========================================================================
 
-TEST(t2t_review, refresh_itinerary_after_split_off_trip) {
+TEST(virtual_locations, refresh_itinerary_after_split_off_trip) {
   auto& d = plain();
   auto const original = plan_l_to_m(d);
   ASSERT_FALSE(original.legs_.empty());
@@ -324,7 +309,7 @@ TEST(t2t_review, refresh_itinerary_after_split_off_trip) {
   EXPECT_EQ(original, refreshed);
 }
 
-TEST(t2t_review, leg_alternatives_after_split_off_trip) {
+TEST(virtual_locations, leg_alternatives_after_split_off_trip) {
   auto& d = plain();
   auto const it = plan_l_to_m(d, "&numLegAlternatives=3");
   auto const fb = utl::find_if(it.legs_, [](api::Leg const& l) {
@@ -341,15 +326,13 @@ TEST(t2t_review, leg_alternatives_after_split_off_trip) {
 
 // The debug transfers endpoint lists stops only: CA is split by the
 // CT1 -> CT9 rule, its virtual locations are no transfer targets of their own.
-TEST(t2t_review, debug_transfers_name_their_targets) {
+TEST(virtual_locations, debug_transfers_name_their_targets) {
   auto& d = with_osm();
   auto const transfers = utl::init_from<ep::transfers>(d).value();
   auto const res = transfers("/api/debug/transfers?id=test_CA");
-  ASSERT_TRUE(utl::any_of(d.tt_->locations_.children_[lidx(d, "CA")],
-                          [&](n::location_idx_t const c) {
-                            return d.tt_->locations_.types_[c] ==
-                                   n::location_type::kVirt;
-                          }))
+  ASSERT_TRUE(utl::any_of(
+      d.tt_->locations_.children_[lidx(d, "CA")],
+      [&](n::location_idx_t const c) { return d.tt_->locations_.is_virt(c); }))
       << "precondition: CA has virtual locations";
   ASSERT_FALSE(res.transfers_.empty()) << "precondition";
   for (auto const& t : res.transfers_) {
@@ -359,28 +342,22 @@ TEST(t2t_review, debug_transfers_name_their_targets) {
   }
 }
 
-// The default profile walks on routed footpaths now. Changing platforms can
-// not be faster than changing at the platform itself (2 min): P1 and P2 share
-// a coordinate and the router cannot connect them, so the estimate is 0 min.
-TEST(t2t_review, default_profile_walk_keeps_change_time_floor) {
+// A walk in the default profile is never shorter than the transfer time at
+// either end (2 min). P1 and P2 share a coordinate and the router cannot
+// connect them, so their beeline estimate is 0 min.
+TEST(virtual_locations, default_profile_walk_keeps_change_time_floor) {
   auto& d = with_osm();
   auto const& tt = *d.tt_;
   auto const p1 = lidx(d, "P1");
   auto const p2 = lidx(d, "P2");
 
   auto best = std::optional<int>{};
-  auto const take = [&](n::location_idx_t const l, n::duration_t const dur) {
-    if (l == p2 && (!best.has_value() || dur.count() < *best)) {
-      best = dur.count();
-    }
-  };
-  for (auto const fp : tt.locations_.footpaths_out_[n::kDefaultProfile][p1]) {
-    take(fp.target(), fp.duration());
-  }
-  n::routing::for_each_hub_source<n::direction::kBackward>(
-      tt, n::kDefaultProfile, p1, [&](n::footpath const fp) {
-        take(fp.target(), fp.duration());
-        return true;
+  n::routing::for_each_transfer<n::direction::kForward>(
+      tt, nullptr, n::kDefaultProfile, p1, [&](n::footpath const fp) {
+        if (fp.target() == p2 &&
+            (!best.has_value() || fp.duration().count() < *best)) {
+          best = fp.duration().count();
+        }
       });
   ASSERT_TRUE(best.has_value()) << "precondition: P1 -> P2 walkable";
   EXPECT_GE(*best, tt.locations_.transfer_time_[p1].count());
@@ -388,7 +365,7 @@ TEST(t2t_review, default_profile_walk_keeps_change_time_floor) {
 
 // Both car-carrying trips at CA are split off by a trip rule. CA is still a
 // stop cars use, so the car profile has to connect it to CB - like CA2.
-TEST(t2t_review, car_profile_connects_stops_whose_trips_were_split) {
+TEST(virtual_locations, car_profile_connects_stops_whose_trips_were_split) {
   auto& d = with_osm();
   auto const& tt = *d.tt_;
   auto const ca = lidx(d, "CA");

@@ -9,7 +9,6 @@
 #include "utl/concat.h"
 #include "utl/erase_if.h"
 #include "utl/parallel_for.h"
-#include "utl/sorted_diff.h"
 
 #include "osr/routing/profiles/foot.h"
 #include "osr/routing/route.h"
@@ -32,7 +31,8 @@ namespace n = nigiri;
 
 namespace motis {
 
-// below this, a missing routing result is an OSM data error, not a real gap
+// Below this distance, a pair the router cannot connect is taken as an OSM data
+// error, not a real gap.
 constexpr auto const kMaxMissingFootpathDistance = 100.0;
 
 elevator_footpath_map_t compute_footpaths(
@@ -69,8 +69,6 @@ elevator_footpath_map_t compute_footpaths(
   };
 
   struct state {
-    std::vector<n::footpath> sorted_tt_fps_;
-    std::vector<n::footpath> missing_;
     std::vector<n::location_idx_t> neighbors_;
     std::vector<osr::location> neighbors_loc_;
     osr::match_result neighbor_candidates_;
@@ -87,17 +85,16 @@ elevator_footpath_map_t compute_footpaths(
       fps.clear();
     }
 
-    // beeline estimates the default profile gets on top of `transfers`
+    // Beeline estimates the default profile gets in addition to `transfers`.
     auto default_estimates =
         n::vector_map<n::location_idx_t, std::vector<n::footpath>>(
             mode.rebuild_default_profile_ ? tt.n_locations() : 0U);
 
     auto const is_candidate = [&](n::location_idx_t const l) {
-      // Virtual locations sit exactly where their stop sits, and no profile
-      // computed here distinguishes them: matching and routing them again
-      // would repeat the work per member and produce a quadratic matrix
-      // between co-located nodes.
-      if (tt.locations_.types_[l] == n::location_type::kVirt) {
+      // A virtual location sits where its stop sits and the profiles computed
+      // here do not distinguish the two: routing it would only repeat the
+      // stop's work.
+      if (tt.locations_.is_virt(l)) {
         return false;
       }
       return !mode.is_candidate_ || mode.is_candidate_(l);
@@ -205,15 +202,15 @@ elevator_footpath_map_t compute_footpaths(
             }
           }
 
-          // transfers.txt belongs to the default profile alone. What is
-          // computed here is physical: a wheelchair may not manage the stated
-          // time or the stairs at all, and a car transfer has nothing to do
-          // with it. The virtual locations the rules created carry nothing
-          // here, and the routing projects them onto their stop.
+          // transfers.txt applies to the default profile only: the durations
+          // computed here are physical (a wheelchair may not manage the
+          // stated time or the stairs at all). Virtual locations get no
+          // footpaths here, the routing projects them onto their stop.
 
-          // A pair the router cannot connect is estimated by its beeline
-          // where that is an OSM data error rather than a real gap: over a
-          // few meters, and in the default profile also within one station.
+          // A pair the router cannot connect gets a beeline estimate where
+          // this is likely an OSM data error rather than a real gap: closer
+          // than kMaxMissingFootpathDistance and, for the default profile,
+          // also within one station.
           if (mode.extend_missing_ || mode.rebuild_default_profile_) {
             for (auto const [n, r] : utl::zip(s.neighbors_, results)) {
               if (r.has_value()) {

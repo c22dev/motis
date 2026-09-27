@@ -39,12 +39,13 @@ api::transfers_response transfers::operator()(
   auto const add = [&](n::profile_idx_t const prf, auto&& field) {
     n::routing::for_each_transfer<n::direction::kForward>(
         tt_, nullptr, prf, l, [&](n::footpath const fp) {
-          // a virtual location (transfers.txt rules) has no id of its own, it
-          // is its stop outside of the routing
-          if (tt_.locations_.types_[fp.target()] == n::location_type::kVirt) {
+          // A virtual location has no id of its own: outside of the
+          // routing, it is its stop.
+          if (tt_.locations_.is_virt(fp.target())) {
             return;
           }
-          // a pair can come as a footpath and from a hub: the shortest
+          // A pair can come both as a footpath and from a hub: keep the
+          // shortest.
           auto& d = field(footpaths[fp.target()]);
           d = std::min(d.value_or(fp.duration().count()),
                        static_cast<double>(fp.duration().count()));

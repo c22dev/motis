@@ -287,11 +287,7 @@ TEST(motis, trip_ticketing_at_transfer_rule_stops) {
   auto d = data{dir, c};
 
   // precondition: both rules split off virtual locations
-  auto n_virts = 0U;
-  for (auto const t : d.tt_->locations_.types_) {
-    n_virts += t == nigiri::location_type::kVirt;
-  }
-  ASSERT_GE(n_virts, 2U);
+  ASSERT_GE(test::n_virts(*d.tt_), 2U);
 
   auto const trip_ep = utl::init_from<ep::trip>(d).value();
 

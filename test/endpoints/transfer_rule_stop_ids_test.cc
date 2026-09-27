@@ -33,8 +33,8 @@ namespace n = nigiri;
 
 namespace {
 
-// The trip-qualified transfers.txt row differs from the default of the stop
-// pair, so trip A stops at a virtual location below S1 (and B below S2).
+// The trip-qualified transfers.txt row differs from the unqualified one of the
+// stop pair, so trip A stops at a virtual location below S1 (and B below S2).
 constexpr auto const kGTFS = R"(
 # agency.txt
 agency_id,agency_name,agency_url,agency_timezone
@@ -100,11 +100,7 @@ TEST(motis, transfer_rule_stop_ids) {
   d.init_rtt(date::sys_days{2019_y / May / 1});
 
   // precondition: the rule did split off virtual locations
-  auto n_virts = 0U;
-  for (auto const t : d.tt_->locations_.types_) {
-    n_virts += t == n::location_type::kVirt;
-  }
-  ASSERT_NE(0U, n_virts);
+  ASSERT_NE(0U, n_virts(*d.tt_));
 
   auto const plan = [&]() {
     auto const routing = utl::init_from<ep::routing>(d).value();
@@ -125,7 +121,7 @@ TEST(motis, transfer_rule_stop_ids) {
     EXPECT_EQ("test_S2", it.legs_[2].from_.stopId_);
   }
 
-  // real-time: a delay that names the platform of a rule-bound stop
+  // Real-time: a delay at S1, where trip A stops at a virtual location.
   auto const stats = n::rt::gtfsrt_update_msg(
       *d.tt_, *d.rt_->rtt_, n::source_idx_t{0}, "test",
       to_feed_msg(
@@ -161,7 +157,7 @@ TEST(motis, transfer_rule_stop_ids) {
     EXPECT_EQ("test_S1", res.place_.stopId_);
     ASSERT_FALSE(res.stopTimes_.empty());
     for (auto const& st : res.stopTimes_) {
-      // departures of the sibling platform are listed too
+      // departures at the other stop of S (S2) are listed too
       EXPECT_TRUE(st.place_.stopId_ == "test_S1" ||
                   st.place_.stopId_ == "test_S2")
           << *st.place_.stopId_;
@@ -170,7 +166,7 @@ TEST(motis, transfer_rule_stop_ids) {
     }
   }
 
-  {  // an itinerary through rule-bound stops is found again by its id
+  {  // an itinerary through virtual locations is found again by its id
     auto const routing = utl::init_from<ep::routing>(d).value();
     auto const stop_times = utl::init_from<ep::stop_times>(d).value();
     auto const original = plan().itineraries_.front();

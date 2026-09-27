@@ -1,11 +1,13 @@
 #pragma once
 
+#include "utl/helpers/algorithm.h"
+
 #include "nigiri/timetable.h"
 
 namespace motis {
 
-// The routes stopping at a stop: its own and the ones at its virtual locations
-// (transfers.txt rules move trips there, the stop is still where they stop).
+// The routes stopping at `l`, including those at its virtual locations:
+// transfers.txt rules move trips there, but they still stop at `l`.
 template <typename Fn>
 void for_each_route_at(nigiri::timetable const& tt,
                        nigiri::location_idx_t const l,
@@ -13,20 +15,29 @@ void for_each_route_at(nigiri::timetable const& tt,
   for (auto const r : tt.location_routes_[l]) {
     fn(r);
   }
-  for (auto const c : tt.locations_.children_[l]) {
-    if (tt.locations_.types_[c] == nigiri::location_type::kVirt) {
-      for (auto const r : tt.location_routes_[c]) {
-        fn(r);
-      }
+  tt.locations_.for_each_virt(l, [&](nigiri::location_idx_t const v) {
+    for (auto const r : tt.location_routes_[v]) {
+      fn(r);
     }
-  }
+  });
+}
+
+// Whether `pred` holds for one of the routes stopping at `l` (see
+// for_each_route_at). No route is checked after the first match.
+template <typename Pred>
+bool any_route_at(nigiri::timetable const& tt,
+                  nigiri::location_idx_t const l,
+                  Pred&& pred) {
+  auto any = utl::any_of(tt.location_routes_[l], pred);
+  tt.locations_.for_each_virt(l, [&](nigiri::location_idx_t const v) {
+    any = any || utl::any_of(tt.location_routes_[v], pred);
+  });
+  return any;
 }
 
 inline bool has_routes(nigiri::timetable const& tt,
                        nigiri::location_idx_t const l) {
-  auto any = false;
-  for_each_route_at(tt, l, [&](nigiri::route_idx_t) { any = true; });
-  return any;
+  return any_route_at(tt, l, [](nigiri::route_idx_t) { return true; });
 }
 
 inline nigiri::hash_set<std::string_view> get_location_routes(

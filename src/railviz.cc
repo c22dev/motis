@@ -476,8 +476,8 @@ Response build_routes_response(
   auto stop_indexes = std::vector<std::int64_t>{};
   stop_indexes.resize(tt.locations_.coordinates_.size(), -1);
   auto const get_stop_index = [&](n::rt::run_stop const& stop) {
-    // a virtual location (transfers.txt rules) is its stop
-    auto const l = tt.locations_.get_attribute_idx(stop.get_location_idx());
+    // A virtual location is output as its stop.
+    auto const l = tt.locations_.get_base_idx(stop.get_location_idx());
     auto& stop_index = stop_indexes[to_idx(l)];
     if (stop_index == -1) {
       auto const parent = tt.locations_.get_root_idx(l);

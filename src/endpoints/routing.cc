@@ -1144,7 +1144,7 @@ api::plan_response routing::route(api::plan_params const& query,
 #if defined(NIGIRI_CUDA)
     auto gpu_used = false;
     auto const gpu_supported = n::routing::gpu::gpu_supported(q, rtt);
-    // one snapshot per query, taken before the search allocates anything
+    // Taken once per query, before the search allocates anything.
     auto const gpu_mem_before = n::routing::gpu::device_mem_info();
     auto const run_on_gpu = [&](bool const use_pong) -> bool {
       try {

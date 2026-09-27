@@ -77,8 +77,8 @@ std::string_view tag_lookup::get_tag(n::source_idx_t const src) const {
 
 std::string tag_lookup::id(n::timetable const& tt,
                            n::location_idx_t const x) const {
-  // a virtual location (transfers.txt rules) has no id: it is its stop
-  auto const l = tt.locations_.get_attribute_idx(x);
+  // A virtual location has no id: use its stop's.
+  auto const l = tt.locations_.get_base_idx(x);
   auto const src = tt.locations_.src_.at(l);
   auto const id = tt.locations_.ids_.at(l).view();
   return src == n::source_idx_t::invalid()

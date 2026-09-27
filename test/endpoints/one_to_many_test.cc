@@ -28,10 +28,10 @@ using namespace std::chrono_literals;
 
 namespace n = nigiri;
 
-// transfers.txt declares the transfers that are too far apart to be derived
-// from the stop positions alone (link_stop_distance / meta distance): the
-// FFM_C/FFM_B cluster hangs off the FFM platforms, DA_Tram_3 off the other DA
-// stops. Transfers are directed, so both directions are listed.
+// transfers.txt states the transfers between stops too far apart to be linked
+// by their positions alone (link_stop_distance): FFM_B/FFM_C with the other
+// FFM stops, and between the DA stops. Transfers are directed, so both
+// directions are listed.
 constexpr auto const kGTFS = R"(
 # agency.txt
 agency_id,agency_name,agency_url,agency_timezone
@@ -715,8 +715,8 @@ TEST(one_to_many, pareto_sets_with_routed_transfers_and_distances) {
   EXPECT_NEAR(1100.6, sd.at(2).distance_.value(), 0.1);
   EXPECT_EQ(api::Duration{}, sd.at(3));
 
-  // Routed transfers are physical walking times: the transfers.txt rows of
-  // the fixture belong to the default profile alone and leave them untouched.
+  // Routed transfers are physical walking times: the fixture's transfers.txt
+  // rows apply to the default profile only.
   ASSERT_EQ(4U, td.size());
   ASSERT_EQ(1U, td.at(0).size());
   EXPECT_DOUBLE_EQ(1320.0, td.at(0).at(0).duration_);
@@ -731,10 +731,10 @@ TEST(one_to_many, pareto_sets_with_routed_transfers_and_distances) {
   EXPECT_DOUBLE_EQ(4440.0, td.at(3).at(0).duration_);
   EXPECT_EQ(2, td.at(3).at(0).transfers_);
 
-  // The default profile honours the rows: 4 min between the FFM platforms
-  // and the FFM_B/FFM_C stops, 5 to 9 min around DA - shorter than the
-  // walks, and a rule wins over the walking time. What no row states is
-  // walked: on beelines without osr_footpath, on routed footpaths with it.
+  // The default profile applies the transfers.txt rows (4 to 5 min at FFM, 6
+  // to 9 min around DA), also where the walk takes longer. Pairs without a
+  // row are walked: on beelines without osr_footpath, on routed footpaths
+  // with it.
   auto const default_profile = [](data& x) {
     return one_to_many_post(x)(api::OneToManyIntermodalParams{
         .one_ = "49.8722160,8.6282315",
@@ -746,7 +746,7 @@ TEST(one_to_many, pareto_sets_with_routed_transfers_and_distances) {
         .withDistance_ = true});
   };
 
-  {  // without osr_footpath: the loader's layer
+  {  // without osr_footpath: the loader's footpath layer
     auto [beeline, _c] =
         get_test_case<test_case::FFM_one_to_many_no_osr_footpath>();
     auto const default_durations = default_profile(beeline);

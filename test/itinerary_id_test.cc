@@ -833,10 +833,9 @@ TEST(motis, itinerary_id_reconstruct_flex_location_group_first_mile) {
   run_flex_first_mile_test("flex_group", "2019-05-02");
 }
 
-// The feed states the platform change at FFM (3 min): with osr_footpath the
-// default profile walks on routed footpaths, where FFM_10 -> FFM_101 takes 6
-// min and RE2 (arr 10:25) would miss S3 (dep 10:30). A rule stays
-// authoritative.
+// transfers.txt states FFM_10 -> FFM_101 as 3 min. The routed walk takes 6
+// min, with which RE2 (arr 10:25) would miss S3 (dep 10:30); the rule stays
+// authoritative with osr_footpath.
 constexpr auto kMultiHopGtfs = R"(
 # agency.txt
 agency_id,agency_name,agency_url,agency_timezone

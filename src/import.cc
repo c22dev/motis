@@ -27,7 +27,6 @@
 #include "tiles/osm/load_osm.h"
 
 #include "nigiri/loader/assistance.h"
-#include "nigiri/loader/build_footpaths.h"
 #include "nigiri/loader/load.h"
 #include "nigiri/loader/loader_interface.h"
 #include "nigiri/clasz.h"
@@ -200,8 +199,8 @@ void import(config const& c,
         h, t.first_day_, t.num_days_, t.with_shapes_, t.adjust_footpaths_,
         t.merge_dupes_intra_src_, t.merge_dupes_inter_src_,
         t.link_stop_distance_, t.update_interval_, t.incremental_rt_update_,
-        t.max_footpath_length_, t.default_transfer_time_, t.transfer_rule_hubs_,
-        t.hubs_, t.default_timezone_, t.assistance_times_);
+        t.max_footpath_length_, t.default_transfer_time_, t.default_timezone_,
+        t.assistance_times_);
   }
 
   auto osm_hash = std::pair{"osm"s, cista::BASE_HASH};
@@ -381,7 +380,6 @@ void import(config const& c,
                            dc.default_reservation_not_required_,
                            dc.clasz_reservation_not_required_),
                        .extend_calendar_ = dc.extend_calendar_,
-                       .transfer_rule_hubs_ = t.transfer_rule_hubs_,
                        .user_script_ =
                            dc.script_
                                .and_then([](std::string const& path) {
@@ -399,10 +397,7 @@ void import(config const& c,
              .merge_dupes_intra_src_ = t.merge_dupes_intra_src_,
              .merge_dupes_inter_src_ = t.merge_dupes_inter_src_,
              .max_footpath_length_ = t.max_footpath_length_,
-             .merge_stats_dir_ = data_path,
-             // with osr_footpath, the routed profiles come later and bring
-             // hubs of their own: materialized once they are done
-             .hubs_ = t.hubs_ || c.osr_footpath_},
+             .merge_stats_dir_ = data_path},
             interval, assistance.get(), shapes.get(), false))};
 
         tt->write(data_path / "tt.bin");
@@ -514,8 +509,8 @@ void import(config const& c,
              .max_matching_distance_ = c.timetable_->max_matching_distance_,
              .extend_missing_ = c.timetable_->extend_missing_footpaths_,
              .max_duration_ = c.timetable_->max_footpath_length_ * 1min,
-             // osr_footpath is the switch: without it this never runs and the
-             // default profile stays the loader's layer
+             // Without osr_footpath this task does not run and the default
+             // profile keeps the loader's footpath layer.
              .rebuild_default_profile_ = true},
             {.profile_ = osr::search_profile::kWheelchair,
              .profile_idx_ = n::kWheelchairProfile,
@@ -525,14 +520,12 @@ void import(config const& c,
              .profile_idx_ = n::kCarProfile,
              .max_matching_distance_ = 250.0,
              .max_duration_ = 8h,
-             // the profile projects virtual locations onto their stop, so
-             // the routes moved there count for the stop
+             // The profile projects virtual locations onto their stop, so
+             // the routes at them count for the stop.
              .is_candidate_ = [&](n::location_idx_t const l) {
-               auto cars = false;
-               for_each_route_at(*d.tt_, l, [&](n::route_idx_t const r) {
-                 cars = cars || d.tt_->is_flag_set(nigiri::kCarsAllowed, r);
+               return any_route_at(*d.tt_, l, [&](n::route_idx_t const r) {
+                 return d.tt_->is_flag_set(nigiri::kCarsAllowed, r);
                });
-               return cars;
              }}};
         auto const elevator_footpath_map = compute_footpaths(
             *d.w_, *d.l_, *d.pl_, *d.tt_, *d.matches_, d.way_matches_.get(),
@@ -540,9 +533,6 @@ void import(config const& c,
 
         cista::write(data_path / "elevator_footpath_map.bin",
                      elevator_footpath_map);
-        if (!c.timetable_->hubs_) {
-          n::loader::materialize_hubs(*d.tt_);
-        }
         d.tt_->write(data_path / "tt_ext.bin");
 
         cista::free_self_allocated(d.tt_.get());
@@ -555,8 +545,8 @@ void import(config const& c,
                  cista::build_hash(c.timetable_.value_or(config::timetable{})
                                        .preprocess_max_matching_distance_)}}};
 
-  // osr_footpath replaces the walks of the default profile: the transfers
-  // have to be precomputed on the timetable the server routes on.
+  // osr_footpath replaces the walks of the default profile in tt_ext.bin: the
+  // trip-based transfers have to be precomputed on that timetable.
   auto tbd_hashes = meta_t{tt_hash, n_version(), tbd_version()};
   if (c.osr_footpath_) {
     tbd_hashes.insert(begin(osr_footpath.hashes_), end(osr_footpath.hashes_));

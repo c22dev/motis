@@ -1028,8 +1028,8 @@ TEST(motis, routing) {
   // Accessible ICEs via B2 are in between, but use inaccesisible transfer stops
   //
   // Expected result: Accessible ICE via B1. The routed wheelchair profile
-  // ignores transfers.txt (WCH_B1,WCH_B1,0,0): the change at B1 takes the
-  // stop's default 2 min.
+  // ignores transfers.txt (WCH_B1,WCH_B1,0,0): B1 has the default transfer time
+  // of 2 min.
   {
     auto const res = routing(
         "?fromPlace=test_WCH_A"

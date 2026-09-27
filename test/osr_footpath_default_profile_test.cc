@@ -22,7 +22,7 @@ namespace {
 // none of them: what the default profile holds for a pair is a rule or an
 // estimate.
 //
-//   P1 -- 300m -- P2   platforms of station P
+//   P1 -- 300m -- P2   stops of station P
 //   P1 --  78m -- Q    another stop, closer than 100m
 //   P1 -- 400m -- R    another stop
 //   P2 -> R            stated by transfers.txt (11 min)
@@ -78,7 +78,7 @@ data import_with(bool const osr_footpath, char const* dir) {
   return data{path, c};
 }
 
-// What the routing takes for a -> b: a footpath or what a hub hands out.
+// The shortest transfer a -> b the routing sees: a footpath or a hub.
 std::optional<int> minutes(n::timetable const& tt,
                            n::profile_idx_t const prf,
                            char const* from,
@@ -87,27 +87,19 @@ std::optional<int> minutes(n::timetable const& tt,
   auto const a = tt.locations_.location_id_to_idx_.at({from, src});
   auto const b = tt.locations_.location_id_to_idx_.at({to, src});
   auto best = std::optional<int>{};
-  auto const take = [&](n::location_idx_t const l, n::duration_t const d) {
-    if (l == b && (!best.has_value() || d.count() < *best)) {
-      best = d.count();
-    }
-  };
-  if (cista::to_idx(a) < tt.locations_.footpaths_out_[prf].size()) {
-    for (auto const fp : tt.locations_.footpaths_out_[prf][a]) {
-      take(fp.target(), fp.duration());
-    }
-  }
-  n::routing::for_each_hub_source<n::direction::kBackward>(
-      tt, prf, a, [&](n::footpath const fp) {
-        take(fp.target(), fp.duration());
-        return true;
+  n::routing::for_each_transfer<n::direction::kForward>(
+      tt, nullptr, prf, a, [&](n::footpath const fp) {
+        if (fp.target() == b &&
+            (!best.has_value() || fp.duration().count() < *best)) {
+          best = fp.duration().count();
+        }
       });
   return best;
 }
 
 }  // namespace
 
-// osr_footpath is the switch: without it the default profile is the loader's.
+// Without osr_footpath, the default profile keeps the loader's footpath layer.
 TEST(motis, default_profile_walks_without_osr_footpath) {
   auto const d = import_with(false, "default_profile_beeline");
   auto const& tt = *d.tt_;
@@ -117,9 +109,9 @@ TEST(motis, default_profile_walks_without_osr_footpath) {
   EXPECT_EQ(11, minutes(tt, n::kDefaultProfile, "P2", "R"));
 }
 
-// With it, the default profile walks where the router walks. A pair the router
-// cannot connect keeps an estimate (beeline at 0.7m/s) if it is closer than
-// 100m or within one station - and a rule stays a rule.
+// With osr_footpath, the default profile walks on routed footpaths. A pair the
+// router cannot connect keeps an estimate (beeline at 0.7m/s) if it is closer
+// than 100m or within one station. transfers.txt stays authoritative.
 TEST(motis, default_profile_walks_with_osr_footpath) {
   auto const d = import_with(true, "default_profile_routed");
   auto const& tt = *d.tt_;
@@ -138,8 +130,8 @@ TEST(motis, default_profile_walks_with_osr_footpath) {
 namespace {
 
 // RE2 arrives at FFM_10 10:25, S3a leaves FFM_101 10:30, S3b 10:40. The beeline
-// between the two platforms takes 3 min, the routed walk 6 min.
-constexpr auto const kPlatformChangeGTFS = R"(
+// walk between the two stops takes 3 min, the routed walk 6 min.
+constexpr auto const kTransferBetweenStopsGTFS = R"(
 # agency.txt
 agency_id,agency_name,agency_url,agency_timezone
 DB,Deutsche Bahn,https://deutschebahn.com,Europe/Berlin
@@ -182,21 +174,21 @@ S1,20190501,1
 
 // The trip-based transfers are precomputed at import time: with osr_footpath
 // they have to come from the timetable the server routes on (tt_ext.bin), or
-// they would still allow the 3 min beeline change onto S3a.
+// they would allow the 3 min beeline walk to S3a.
 TEST(motis, trip_based_transfers_follow_osr_footpath) {
   auto const path = std::filesystem::path{"test/data/default_profile_tb"};
   auto ec = std::error_code{};
   std::filesystem::remove_all(path, ec);
-  auto const c =
-      config{.osm_ = {"test/resources/test_case.osm.pbf"},
-             .timetable_ =
-                 config::timetable{
-                     .first_day_ = "2019-05-01",
-                     .num_days_ = 2,
-                     .tb_ = true,
-                     .datasets_ = {{"test", {.path_ = kPlatformChangeGTFS}}}},
-             .street_routing_ = true,
-             .osr_footpath_ = true};
+  auto const c = config{
+      .osm_ = {"test/resources/test_case.osm.pbf"},
+      .timetable_ =
+          config::timetable{
+              .first_day_ = "2019-05-01",
+              .num_days_ = 2,
+              .tb_ = true,
+              .datasets_ = {{"test", {.path_ = kTransferBetweenStopsGTFS}}}},
+      .street_routing_ = true,
+      .osr_footpath_ = true};
   import(c, path);
   auto d = data{path, c};
   ASSERT_NE(nullptr, d.tbd_);
