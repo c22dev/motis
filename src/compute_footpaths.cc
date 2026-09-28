@@ -212,11 +212,11 @@ elevator_footpath_map_t compute_footpaths(
               }
               auto const is_close = dist < kMaxMissingFootpathDistance;
               if (mode.extend_missing_ && is_close) {
-                transfers[l].emplace_back(estimate);
+                transfers[l].push_back(estimate);
               } else if (mode.rebuild_default_profile_ &&
                          (is_close || tt.locations_.get_root_idx(l) ==
                                           tt.locations_.get_root_idx(n))) {
-                default_estimates[l].emplace_back(estimate);
+                default_estimates[l].push_back(estimate);
               }
             }
           }

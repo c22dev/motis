@@ -32,7 +32,7 @@ inline void add_location(nigiri::timetable const& tt,
   if (exact) {
     locations.emplace_back(l);
     tt.locations_.for_each_virt(
-        l, [&](nigiri::location_idx_t const v) { locations.emplace_back(v); });
+        l, [&](nigiri::location_idx_t const v) { locations.push_back(v); });
     return;
   }
 
