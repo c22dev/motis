@@ -31,6 +31,7 @@
 #include "nigiri/loader/loader_interface.h"
 #include "nigiri/clasz.h"
 #include "nigiri/common/parse_date.h"
+#include "nigiri/location_routes.h"
 #include "nigiri/routing/tb/preprocess.h"
 #include "nigiri/rt/rt_timetable.h"
 #include "nigiri/shapes_storage.h"
@@ -51,7 +52,6 @@
 #include "motis/compute_footpaths.h"
 #include "motis/data.h"
 #include "motis/hashes.h"
-#include "motis/location_routes.h"
 #include "motis/route_shapes.h"
 #include "motis/tag_lookup.h"
 #include "motis/tt_location_rtree.h"
@@ -519,7 +519,7 @@ void import(config const& c,
              .max_matching_distance_ = 250.0,
              .max_duration_ = 8h,
              .is_candidate_ = [&](n::location_idx_t const l) {
-               return any_route_at(*d.tt_, l, [&](n::route_idx_t const r) {
+               return n::any_route_at(*d.tt_, l, [&](n::route_idx_t const r) {
                  return d.tt_->is_flag_set(nigiri::kCarsAllowed, r);
                });
              }}};

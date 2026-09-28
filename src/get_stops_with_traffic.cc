@@ -2,10 +2,9 @@
 
 #include "osr/location.h"
 
+#include "nigiri/location_routes.h"
 #include "nigiri/rt/rt_timetable.h"
 #include "nigiri/timetable.h"
-
-#include "motis/location_routes.h"
 
 namespace n = nigiri;
 
@@ -20,7 +19,7 @@ std::vector<n::location_idx_t> get_stops_with_traffic(
     n::location_idx_t const not_equal_to) {
   auto ret = std::vector<n::location_idx_t>{};
   rtree.in_radius(pos.pos_, distance, [&](n::location_idx_t const l) {
-    if (!has_routes(tt, l) &&
+    if (!n::has_routes(tt, l) &&
         (rtt == nullptr || rtt->location_rt_transports_[l].empty())) {
       return;
     }

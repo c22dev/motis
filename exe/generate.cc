@@ -10,6 +10,7 @@
 
 #include "nigiri/common/interval.h"
 #include "nigiri/flex.h"
+#include "nigiri/location_routes.h"
 #include "nigiri/routing/raptor/debug.h"
 #include "nigiri/routing/search.h"
 #include "nigiri/special_stations.h"
@@ -26,7 +27,6 @@
 #include "motis/constants.h"
 #include "motis/data.h"
 #include "motis/endpoints/routing.h"
-#include "motis/location_routes.h"
 #include "motis/odm/bounds.h"
 #include "motis/osr/parameters.h"
 #include "motis/point_rtree.h"
@@ -80,7 +80,7 @@ n::location_idx_t random_stop(n::timetable const& tt,
   auto s = n::location_idx_t::invalid();
   do {
     s = rand_in(stops);
-  } while (!has_routes(tt, s));
+  } while (!n::has_routes(tt, s));
   return s;
 }
 
