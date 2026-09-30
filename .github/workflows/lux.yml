@@ -1,0 +1,63 @@
+name: Lux
+
+on:
+  push:
+    branches: [ 'lux/**' ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-amd64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    container: ghcr.io/motis-project/docker-cpp-build
+    env:
+      BUILDCACHE_DIR: /__w/buildcache
+      BUILDCACHE_DIRECT_MODE: true
+      BUILDCACHE_MAX_CACHE_SIZE: 4294967296
+      BUILDCACHE_LUA_PATH: ${{ github.workspace }}/tools
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10
+
+      - name: Restore buildcache
+        uses: actions/cache@v4
+        with:
+          path: /__w/buildcache
+          key: buildcache-linux-amd64-${{ github.sha }}
+          restore-keys: buildcache-linux-amd64-
+
+      - name: CMake
+        run: |
+          git config --global --add safe.directory `pwd`
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          cmake -G Ninja -S . -B build --preset=linux-amd64-release
+
+      - name: Build
+        run: |
+          buildcache -z
+          cmake --build build --target motis motis-web-ui -j 4
+          buildcache -s
+
+      - name: Smoke test
+        run: ./build/motis --version
+
+      - name: Create Distribution
+        run: |
+          mkdir motis
+          mv build/motis motis/motis
+          mv ui/build motis/ui
+          cp -r deps/tiles/profile motis/tiles-profiles
+          tar -C ./motis -cjf motis-linux-amd64.tar.bz2 ./motis ./tiles-profiles ./ui
+
+      - name: Upload Distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: motis-linux-amd64
+          path: motis-linux-amd64.tar.bz2
