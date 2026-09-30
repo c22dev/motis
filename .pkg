@@ -49,7 +49,7 @@
 [osr]
   url=git@github.com:c22dev/osr.git
   branch=lux/foot-access
-  commit=f4b0262e78ab7d7b741555e1eac35f284982b508
+  commit=9d8bf36c774e89b93fd11af42253ae5938ededf6
 [prometheus-cpp]
   url=git@github.com:motis-project/prometheus-cpp.git
   branch=master
