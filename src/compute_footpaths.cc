@@ -145,7 +145,7 @@ elevator_footpath_map_t compute_footpaths(
                                 }
                               });
 
-          auto const results = osr::route(
+          auto const results = osr::route_one_to_many(
               to_profile_parameters(mode.profile_, {}), w, lookup,
               mode.profile_, get_loc(tt, w, pl, matches, l),
               utl::transform_to(s.neighbors_, s.neighbors_loc_,
@@ -163,7 +163,8 @@ elevator_footpath_map_t compute_footpaths(
               }(),
               static_cast<osr::cost_t>(mode.max_duration_.count()),
               osr::direction::kForward, nullptr, nullptr, elevations,
-              [](osr::path const& p) { return p.uses_elevator_; });
+              [](osr::path const& p) { return p.uses_elevator_; })
+              ->results();
 
           for (auto const [n, r] : utl::zip(s.neighbors_, results)) {
             if (!r.has_value()) {

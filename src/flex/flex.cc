@@ -313,10 +313,14 @@ void add_flex_td_offsets(osr::ways const& w,
         tt, w, lookup, pl, fa, matches, transports.front(), dir, frd);
 
     auto const paths =
-        osr::route(params, w, lookup, osr::search_profile::kCarSharing, pos,
-                   near_stop_locations, pos_match[osr::match_idx_t{0U}],
-                   near_stop_matches, static_cast<osr::cost_t>(max.count()),
-                   dir, nullptr, &sharing_data, nullptr);
+        osr::route_one_to_many(params, w, lookup,
+                               osr::search_profile::kCarSharing, pos,
+                               near_stop_locations,
+                               pos_match[osr::match_idx_t{0U}],
+                               near_stop_matches,
+                               static_cast<osr::cost_t>(max.count()), dir,
+                               nullptr, &sharing_data, nullptr)
+            ->results();
     auto const day_idx_iv = get_relevant_days(tt, start_time);
     for (auto const id : transports) {
       auto const t = id.get_flex_transport();

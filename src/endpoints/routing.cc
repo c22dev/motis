@@ -339,11 +339,13 @@ std::vector<n::routing::offset> get_offsets(
         cached_near_stop_matches = std::prev(end(near_stop_match_cache));
       }
 
-      return osr::route(params, *r.w_, *r.l_, p, pos, near_stop_locations,
-                        pos_match[osr::match_idx_t{0U}],
-                        cached_near_stop_matches->matches_,
-                        static_cast<osr::cost_t>(max.count()), dir, nullptr,
-                        sharing, elevations);
+      return osr::route_one_to_many(
+                 params, *r.w_, *r.l_, p, pos, near_stop_locations,
+                 pos_match[osr::match_idx_t{0U}],
+                 cached_near_stop_matches->matches_,
+                 static_cast<osr::cost_t>(max.count()), dir, nullptr, sharing,
+                 elevations)
+          ->results();
     };
 
     if (osr::is_rental_profile(profile)) {
