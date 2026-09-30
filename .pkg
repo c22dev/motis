@@ -47,9 +47,9 @@
   branch=main
   commit=f2240dc890f3bf68fe6fa5a80450e93aab09578e
 [osr]
-  url=git@github.com:motis-project/osr.git
-  branch=master
-  commit=a7b2ec2728544304ef1d8397b3042abc8d10f7e7
+  url=git@github.com:c22dev/osr.git
+  branch=lux/sidewalk-separate
+  commit=55bc03846ab7dbfb8edeee0a2006897a1856b028
 [prometheus-cpp]
   url=git@github.com:motis-project/prometheus-cpp.git
   branch=master
