@@ -112,10 +112,11 @@ std::vector<n::td_footpath> get_td_footpaths(
         &blocked_mem);
 
     for (auto const [to, p] : utl::zip(neighbors, results)) {
-      auto const duration = p.has_value() && (n::duration_t{p->cost_ / 60U} <
-                                              n::footpath::kMaxDuration)
-                                ? n::duration_t{p->cost_ / 60U}
-                                : n::footpath::kMaxDuration;
+      auto const duration =
+          p.has_value() && (n::duration_t{p->duration_.count() / 60U} <
+                            n::footpath::kMaxDuration)
+              ? n::duration_t{p->duration_.count() / 60U}
+              : n::footpath::kMaxDuration;
       fps.push_back(n::td_footpath{
           to, t,
           n::duration_t{std::max(n::duration_t::rep{1}, duration.count())}});

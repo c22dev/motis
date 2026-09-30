@@ -417,7 +417,7 @@ std::vector<n::routing::offset> get_offsets(
             if (p.has_value()) {
               offsets.emplace_back(l,
                                    n::duration_t{static_cast<unsigned>(
-                                       std::ceil(p->cost_ / 60.0))},
+                                       std::ceil(p->duration_.count() / 60.0))},
                                    gbfs_rd.get_transport_mode(prod_ref));
             }
           }
@@ -434,7 +434,8 @@ std::vector<n::routing::offset> get_offsets(
         if (p.has_value()) {
           offsets.emplace_back(
               l,
-              n::duration_t{static_cast<unsigned>(std::ceil(p->cost_ / 60.0))},
+              n::duration_t{static_cast<unsigned>(
+                  std::ceil(p->duration_.count() / 60.0))},
               static_cast<n::transport_mode_id_t>(profile));
         }
       }
