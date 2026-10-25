@@ -47,9 +47,9 @@
   branch=main
   commit=f2240dc890f3bf68fe6fa5a80450e93aab09578e
 [osr]
-  url=git@github.com:motis-project/osr.git
-  branch=master
-  commit=248b798f3320525d4a2ea018f309f60b386cb41b
+  url=git@github.com:c22dev/osr.git
+  branch=lux/v2.11.4
+  commit=397d8b8e2aa87ff6c517b7368d79e8032274d7d7
 [prometheus-cpp]
   url=git@github.com:motis-project/prometheus-cpp.git
   branch=master
