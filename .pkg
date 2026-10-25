@@ -74,3 +74,7 @@
   url=git@github.com:motis-project/utl.git
   branch=master
   commit=df0527f591cd1c80d7ff5442dfdab3eafe51386c
+[libressl]
+  url=git@github.com:motis-project/libressl.git
+  branch=master
+  commit=660f532fa29e1e934e530f22faa79cf7ea345a40
