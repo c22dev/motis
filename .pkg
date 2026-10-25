@@ -49,7 +49,7 @@
 [osr]
   url=git@github.com:c22dev/osr.git
   branch=lux/v2.11.4
-  commit=397d8b8e2aa87ff6c517b7368d79e8032274d7d7
+  commit=ae444b980208e305cccf5644ef8672fc7efd3876
 [prometheus-cpp]
   url=git@github.com:motis-project/prometheus-cpp.git
   branch=master
@@ -74,7 +74,3 @@
   url=git@github.com:motis-project/utl.git
   branch=master
   commit=df0527f591cd1c80d7ff5442dfdab3eafe51386c
-[libressl]
-  url=git@github.com:motis-project/libressl.git
-  branch=master
-  commit=660f532fa29e1e934e530f22faa79cf7ea345a40
