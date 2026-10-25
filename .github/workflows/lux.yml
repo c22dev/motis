@@ -48,6 +48,11 @@ jobs:
       - name: Smoke test
         run: ./build/motis --version
 
+      - name: osr tests
+        run: |
+          cmake --build build --target osr-test -j 4
+          cd deps/osr && ../../build/deps/osr/osr-test --gtest_brief=1
+
       - name: Create Distribution
         run: |
           mkdir motis
